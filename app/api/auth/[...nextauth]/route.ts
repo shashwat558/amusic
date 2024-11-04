@@ -18,7 +18,7 @@ const handler = NextAuth({
                 await prismaClient.user.create({
                     //@
                     data:{
-                        email: "",
+                        email: params.user.email || "",
                         provider: "Google",
                         role: "EndUser"
                     }

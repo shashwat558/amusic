@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 
-const DownvoteSchema = z.object({
+const upvoteSchema = z.object({
     streamId: z.string(),
 
 
@@ -37,7 +37,7 @@ export async function POST(req:NextRequest) {
 
     try {
 
-    const data = DownvoteSchema.parse(req.json());
+    const data = upvoteSchema.parse(req.json());
     await prismaClient.upvote.create({
         data:{
             userId: user.id,
