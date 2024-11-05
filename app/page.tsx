@@ -3,12 +3,14 @@ import { Input } from "@/components/ui/input"
 import {  Users, ThumbsUp, Play } from "lucide-react"
 import Link from "next/link"
 import { AppBar } from "./components/AppBar"
+import { Redirect } from "./components/Redirect"
 
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 flex flex-col">
-      <div className="p-3">
+      <div className="p-2">
       <AppBar />
+      <Redirect />
       </div>
       <header className="border-b border-purple-800">
         
