@@ -2,21 +2,69 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChevronUp, ChevronDown, PlayCircle } from "lucide-react"
 import Image from "next/image"
+import axios from 'axios'
+
+
+const REFRESH_INTERVAL_MS = 10 * 1000;
+interface Song {
+    id:  string;
+    title: string;
+    videoId: string;
+    bigImage: string;
+    smallImage: string;
+
+    artist?: string;
+    votes: number;
+  }
 
 export default function Component() {
   const [newSongLink, setNewSongLink] = useState('')
-  const [songs, setSongs] = useState([
-    { id: 1, title: "Bohemian Rhapsody", artist: "Queen", votes: 5, videoId: "fJ9rUzIMcZQ", imageUrl: "https://img.youtube.com/vi/fJ9rUzIMcZQ/0.jpg" },
-    { id: 2, title: "Stairway to Heaven", artist: "Led Zeppelin", votes: 3, videoId: "QkF3oxziUI4", imageUrl: "https://img.youtube.com/vi/QkF3oxziUI4/0.jpg" },
-    { id: 3, title: "Hotel California", artist: "Eagles", votes: 2, videoId: "BciS5krYL80", imageUrl: "https://img.youtube.com/vi/BciS5krYL80/0.jpg" },
-  ])
-  const [currentSong, setCurrentSong] = useState(songs[0])
+  const [songs, setSongs] = useState<Song[]>([])
+  const [currentSong, setCurrentSong] = useState<Song | null>(null);
+  
+  async function refreshStream(){
+    const res = await axios.get("/api/streams/my");
+    const streams = res.data.streams;
+    
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const formatedSongs = streams.map((stream: any) => ({
+        id: stream.id,
+        title: stream.title,
+        videoId: stream.extractedId,
+        smallImage: stream.smallImage,
+        bigImage: stream.bigImage
+
+    }))
+    setSongs(formatedSongs)
+
+    if(!currentSong && formatedSongs.length > 0){
+        setCurrentSong(formatedSongs[0])
+    }
+    console.log(formatedSongs)
+    
+    
+
+    
+  }
+
+  useEffect(() => {
+    refreshStream()
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const interval = setInterval(() => {
+
+    }, REFRESH_INTERVAL_MS)
+   
+  },[])
+
+  
+
 
   const extractVideoId = (url: string) => {
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/
@@ -29,20 +77,24 @@ export default function Component() {
     const videoId = extractVideoId(newSongLink)
     if (videoId) {
       try {
-        // In a real application, you would use the YouTube Data API to fetch video details
-        // For this example, we'll simulate an API call with a timeout
+       
         await new Promise(resolve => setTimeout(resolve, 1000))
+
+        const existingSong = songs.find(song => song.videoId === videoId);
+        console.log(existingSong)
         
         const newSong = {
-          id: Date.now(),
-          title: `New Song (ID: ${videoId})`, // In reality, this would be fetched from the API
-          artist: "Unknown Artist", // This would also be fetched from the API
+          id: Date.now().toString(),
+          title: `${"title"}`, 
+          artist: "Unknown Artist", 
           votes: 0,
           videoId,
-          imageUrl: `https://img.youtube.com/vi/${videoId}/0.jpg`
+          smallImage: existingSong ? existingSong.smallImage : `https://img.youtube.com/vi/${videoId}/0.jpg`, // Fallback if not found
+          bigImage: existingSong ? existingSong.bigImage : `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`
         }
         setSongs(prevSongs => [...prevSongs, newSong])
         setNewSongLink('')
+        console.log(newSong)
       } catch (error) {
         console.error("Error adding song:", error)
         // Here you would typically show an error message to the user
@@ -53,13 +105,13 @@ export default function Component() {
     }
   }
 
-  const handleVote = (id: number, increment: number) => {
+  const handleVote = (id: string, increment: number) => {
     setSongs(songs.map(song => 
       song.id === id ? { ...song, votes: song.votes + increment } : song
     ).sort((a, b) => b.votes - a.votes))
   }
 
-  const handlePlayNext = (id: number) => {
+  const handlePlayNext = (id: string) => {
     const songToPlay = songs.find(song => song.id === id)
     if (songToPlay) {
       setCurrentSong(songToPlay)
@@ -79,14 +131,14 @@ export default function Component() {
               <iframe
                 width="100%"
                 height="100%"
-                src={`https://www.youtube.com/embed/${currentSong.videoId}`}
+                src={currentSong?.bigImage}
                 title="YouTube video player"
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
               ></iframe>
             </div>
-            <p className="text-center text-lg font-semibold mb-4 text-purple-300">Now Playing: {currentSong.title} - {currentSong.artist}</p>
+            <p className="text-center text-lg font-semibold mb-4 text-purple-300">Now Playing: {currentSong?.title} - {currentSong?.artist}</p>
           </CardContent>
         </Card>
 
@@ -121,7 +173,7 @@ export default function Component() {
                   <div className="flex items-center space-x-3">
                     <div className="relative w-16 h-16 rounded-md overflow-hidden">
                       <Image
-                        src={song.imageUrl}
+                        src={song.smallImage}
                         alt={`${song.title} thumbnail`}
                         layout="fill"
                         objectFit="cover"
