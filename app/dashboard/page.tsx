@@ -20,7 +20,8 @@ interface Song {
     smallImage: string;
 
     artist?: string;
-    votes: number;
+    upvotes: number;
+    
   }
 
 export default function Component() {
@@ -39,7 +40,8 @@ export default function Component() {
         title: stream.title,
         videoId: stream.extractedId,
         smallImage: stream.smallImage,
-        bigImage: stream.bigImage
+        bigImage: stream.bigImage,
+        upvotes: stream.upvotes ?? 0
 
     }))
     setSongs(formatedSongs)
@@ -55,13 +57,13 @@ export default function Component() {
   }
 
   useEffect(() => {
-    refreshStream()
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    refreshStream();
     const interval = setInterval(() => {
-
-    }, REFRESH_INTERVAL_MS)
-   
-  },[])
+      refreshStream();  // Refresh stream data every 10 seconds
+    }, REFRESH_INTERVAL_MS);
+  
+    return () => clearInterval(interval);  // Clean up interval on unmount
+  }, [currentSong])
 
   
 
@@ -87,7 +89,7 @@ export default function Component() {
           id: Date.now().toString(),
           title: `${"title"}`, 
           artist: "Unknown Artist", 
-          votes: 0,
+          upvotes: 0,
           videoId,
           smallImage: existingSong ? existingSong.smallImage : `https://img.youtube.com/vi/${videoId}/0.jpg`, // Fallback if not found
           bigImage: existingSong ? existingSong.bigImage : `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`
@@ -106,11 +108,21 @@ export default function Component() {
   }
 
   const handleVote = (id: string, increment: number) => {
-    setSongs(songs.map(song => 
-      song.id === id ? { ...song, votes: song.votes + increment } : song
-    ).sort((a, b) => b.votes - a.votes))
-  }
 
+    fetch('/api/streams/upvotes',{
+      method: "POST",
+      
+      body: JSON.stringify({
+        streamId: id
+      })
+    })
+  
+
+    setSongs(songs.map(song => 
+      song.id === id ? { ...song, upvotes: song.upvotes + increment } : song
+    ).sort((a, b) => b.upvotes - a.upvotes))
+  }
+    
   const handlePlayNext = (id: string) => {
     const songToPlay = songs.find(song => song.id === id)
     if (songToPlay) {
@@ -173,7 +185,7 @@ export default function Component() {
                   <div className="flex items-center space-x-3">
                     <div className="relative w-16 h-16 rounded-md overflow-hidden">
                       <Image
-                        src={song.smallImage}
+                        src={""}
                         alt={`${song.title} thumbnail`}
                         layout="fill"
                         objectFit="cover"
@@ -185,7 +197,7 @@ export default function Component() {
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <span className="text-sm font-semibold text-purple-300">{song.votes}</span>
+                    <span className="text-sm font-semibold text-purple-300">{song.upvotes}</span>
                     <div className="flex flex-col">
                       <Button
                         size="sm"

@@ -37,13 +37,32 @@ export async function POST(req:NextRequest) {
 
     try {
 
-    const data = upvoteSchema.parse(req.json());
+    const data = upvoteSchema.parse(await req.json());
+
+    const alreadyVoted = await prismaClient.upvote.findFirst({
+        where: {
+            userId: user.id,
+            streamId: data.streamId
+        }
+    });
+    if(alreadyVoted){
+        return NextResponse.json({
+            message: "You have already voted"
+        },{
+            status: 400
+        })
+    };
     await prismaClient.upvote.create({
         data:{
             userId: user.id,
             streamId: data.streamId 
         }
     });
+
+    return NextResponse.json({
+        message: "Voted succesfully",
+    
+    })
 
         
     } catch (error) {
