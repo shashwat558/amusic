@@ -18,7 +18,7 @@ interface Song {
     videoId: string;
     bigImage: string;
     smallImage: string;
-
+    haveUpvoted: boolean;
     artist?: string;
     upvotes: number;
     
@@ -41,7 +41,8 @@ export default function Component() {
         videoId: stream.extractedId,
         smallImage: stream.smallImage,
         bigImage: stream.bigImage,
-        upvotes: stream.upvotes ?? 0
+        upvotes: stream.upvoteCount ?? 0,
+        haveUpvoted: stream.haveUpvoted ?? false,
 
     }))
     setSongs(formatedSongs)
@@ -92,7 +93,8 @@ export default function Component() {
           upvotes: 0,
           videoId,
           smallImage: existingSong ? existingSong.smallImage : `https://img.youtube.com/vi/${videoId}/0.jpg`, // Fallback if not found
-          bigImage: existingSong ? existingSong.bigImage : `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`
+          bigImage: existingSong ? existingSong.bigImage : `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
+          haveUpvoted: false
         }
         setSongs(prevSongs => [...prevSongs, newSong])
         setNewSongLink('')

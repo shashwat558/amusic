@@ -40,7 +40,8 @@ export async function GET(req: NextRequest){
     return NextResponse.json({
         streams: streams.map(({_count, ...rest}) => ({
             ...rest,
-            upvotes: _count.upvotes
+            upvoteCount: _count.upvotes,
+            haveUpvoted: rest.upvotes.length > 0 ? true : false
         }))
     })
 
