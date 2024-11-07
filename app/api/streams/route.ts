@@ -1,13 +1,13 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import { prismaClient } from "@/app/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 
 import { z } from 'zod';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-//@ts-expect-error
+//@ts-ignore
 import youtubesearchapi from "youtube-search-api"
 
-const YT_REGEX = /^(?:(?:https?:)?\/\/)?(?:www\.)?(?:m\.)?(?:youtu(?:be)?\.com\/(?:v\/|embed\/|watch(?:\/|\?v=))|youtu\.be\/)((?:\w|-){11})(?:\S+)?$/;
+const YT_REGEX = /^(?:(?:https?:)?\/\/)?(?:www\.)?(?:m\.)?(?:youtu(?:be)?\.com\/(?:v\/|embed\/|watch(?:\/|\?v=))|youtu\.be\/)((?:\w|-){11})(?:\S+)?$/
 
 export const CreateStreamSchema = z.object({
     creatorId: z.string(),
@@ -50,8 +50,9 @@ export async function POST(req: NextRequest){
 
         })
         return NextResponse.json({
-            message: "Added stream",
-            id: stream.id
+            ...stream,
+            hasUpvoted: false,
+            upvotes: 0
         })
 
         
@@ -59,7 +60,10 @@ export async function POST(req: NextRequest){
         console.log(error)
         return NextResponse.json({
             message: "error while adding a stream",
-            error
+            error,
+            
+        },{
+            status: 500
         })
         
     }

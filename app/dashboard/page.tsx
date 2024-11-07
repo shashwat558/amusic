@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChevronUp, ChevronDown, PlayCircle } from "lucide-react"
+import LiteYouTubeEmbed from 'react-lite-youtube-embed';
+import 'react-lite-youtube-embed/dist/LiteYouTubeEmbed.css'
 import Image from "next/image"
 import axios from 'axios'
 
@@ -14,13 +16,17 @@ import axios from 'axios'
 const REFRESH_INTERVAL_MS = 10 * 1000;
 interface Song {
     id:  string;
+    userId: string;
     title: string;
     videoId: string;
     bigImage: string;
     smallImage: string;
     haveUpvoted: boolean;
+    
     artist?: string;
     upvotes: number;
+    url: string ;
+    type: string;
     
   }
 
@@ -37,6 +43,8 @@ export default function Component() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const formatedSongs = streams.map((stream: any) => ({
         id: stream.id,
+        userId: stream.userId,
+        url: stream.url,
         title: stream.title,
         videoId: stream.extractedId,
         smallImage: stream.smallImage,
@@ -60,11 +68,11 @@ export default function Component() {
   useEffect(() => {
     refreshStream();
     const interval = setInterval(() => {
-      refreshStream();  // Refresh stream data every 10 seconds
+      refreshStream();  
     }, REFRESH_INTERVAL_MS);
   
-    return () => clearInterval(interval);  // Clean up interval on unmount
-  }, [currentSong])
+    return () => clearInterval(interval); 
+  }, [])
 
   
 
@@ -81,37 +89,30 @@ export default function Component() {
     if (videoId) {
       try {
        
-        await new Promise(resolve => setTimeout(resolve, 1000))
-
-        const existingSong = songs.find(song => song.videoId === videoId);
-        console.log(existingSong)
-        
-        const newSong = {
-          id: Date.now().toString(),
-          title: `${"title"}`, 
-          artist: "Unknown Artist", 
-          upvotes: 0,
-          videoId,
-          smallImage: existingSong ? existingSong.smallImage : `https://img.youtube.com/vi/${videoId}/0.jpg`, // Fallback if not found
-          bigImage: existingSong ? existingSong.bigImage : `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
-          haveUpvoted: false
-        }
+        const res = await fetch("/api/streams", {
+          method: "POST",
+          body: JSON.stringify({
+            creatorId: "d0858db3-940f-48cc-a6c0-b49c4d3f7c7c",
+            url: newSongLink
+          })
+        })
+        const newSong = await res.json();
         setSongs(prevSongs => [...prevSongs, newSong])
         setNewSongLink('')
         console.log(newSong)
       } catch (error) {
         console.error("Error adding song:", error)
-        // Here you would typically show an error message to the user
+        
       }
     } else {
-      // Here you would typically show an error message to the user
+      
       console.error("Invalid YouTube URL")
     }
   }
 
-  const handleVote = (id: string, increment: number) => {
+  const handleVote = (id: string, isUpvote:boolean) => {
 
-    fetch('/api/streams/upvotes',{
+    fetch(`/api/streams/${isUpvote ? 'upvotes': 'downvote'}`,{
       method: "POST",
       
       body: JSON.stringify({
@@ -121,7 +122,7 @@ export default function Component() {
   
 
     setSongs(songs.map(song => 
-      song.id === id ? { ...song, upvotes: song.upvotes + increment } : song
+      song.id === id ? { ...song, upvotes: isUpvote ? song.upvotes + 1 : song.upvotes } : song
     ).sort((a, b) => b.upvotes - a.upvotes))
   }
     
@@ -142,15 +143,12 @@ export default function Component() {
           </CardHeader>
           <CardContent>
             <div className="aspect-video mb-4 rounded-lg overflow-hidden">
-              <iframe
-                width="100%"
-                height="100%"
-                src={currentSong?.bigImage}
-                title="YouTube video player"
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              ></iframe>
+            {currentSong?.url ? (
+      <LiteYouTubeEmbed 
+        id={extractVideoId(currentSong.url) ?? ""} 
+        title={currentSong.title ?? "Song"} 
+      />
+    ) : null}
             </div>
             <p className="text-center text-lg font-semibold mb-4 text-purple-300">Now Playing: {currentSong?.title} - {currentSong?.artist}</p>
           </CardContent>
@@ -169,7 +167,7 @@ export default function Component() {
                 onChange={(e) => setNewSongLink(e.target.value)}
                 className="flex-grow bg-gray-700 border-purple-500 text-purple-100 placeholder-purple-300"
               />
-              <Button type="submit" className="bg-purple-600 hover:bg-purple-700 text-white">
+              <Button  type="submit" className="bg-purple-600 hover:bg-purple-700 text-white">
                 Add Song
               </Button>
             </form>
@@ -204,7 +202,7 @@ export default function Component() {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => handleVote(song.id, 1)}
+                        onClick={() => handleVote(song.id, true)}
                         aria-label={`Upvote ${song.title}`}
                         className="border-purple-500 text-purple-300 hover:bg-purple-700 hover:text-purple-100"
                       >
@@ -213,7 +211,7 @@ export default function Component() {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => handleVote(song.id, -1)}
+                        onClick={() => handleVote(song.id, false)}
                         aria-label={`Downvote ${song.title}`}
                         className="border-purple-500 text-purple-300 hover:bg-purple-700 hover:text-purple-100"
                       >
