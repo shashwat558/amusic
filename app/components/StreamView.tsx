@@ -45,7 +45,7 @@ export default function StreamView({
   
   async function refreshStream(){
     setLoading(true)
-    const res = await axios.get("/api/streams/my");
+    const res = await axios.get(`/api/streams/?creatorId=${creatorId}`);
     const streams = res.data.streams;
     
 
@@ -80,7 +80,7 @@ export default function StreamView({
     refreshStream();
     
     const interval = setInterval(() => {
-        
+        refreshStream()
     }, REFRESH_INTERVAL_MS);
   
     
@@ -168,18 +168,15 @@ export default function StreamView({
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-purple-100 p-4">
-      <div className="max-w-4xl mx-auto flex flex-col">
-      <div className='flex justify-end mb-1' >
-      <Button className='border-2 border-gray-600 mb-1' onClick={handleShare}>Share</Button>
-      </div>
-        <Card className="mb-6 bg-gray-800 border-purple-500 border-2 shadow-lg shadow-purple-500/50">
+    <div className="min-h-screen bg-gray-900 text-purple-100">
+      <div className="max-w-full mx-auto lg:flex justify-center items-center gap-4 pt-8">
+      <Card className="mt-20 w-[733px] h-[600px]  mb-6 sm:min-w-[512px]  bg-gray-800 border-purple-500 border-2 shadow-lg shadow-purple-500/50">
           <CardHeader>
             <CardTitle className="text-2xl font-bold text-center text-purple-300">Stream Song Voting</CardTitle>
             
           </CardHeader>
           <CardContent>
-            <div className="aspect-video mb-4 rounded-lg overflow-hidden">
+            <div className="aspect-video mb-4 rounded-lg overflow-hidden" style={{ width: '100%', height: '360px' }}>
             {currentSong?.url && !loading ? (
       <LiteYouTubeEmbed 
         id={extractVideoId(currentSong.url) ?? ""} 
@@ -190,8 +187,13 @@ export default function StreamView({
             <p className="text-center text-lg font-semibold mb-4 text-purple-300">Now Playing: {currentSong?.title} - {currentSong?.artist}</p>
           </CardContent>
         </Card>
-
-        <Card className="mb-6 bg-gray-800 border-purple-500 border-2 shadow-lg shadow-purple-500/50">
+      
+       
+      <div className='flex flex-col '>
+      <div className='flex justify-center mb-1' >
+      <Button className='border-2 border-gray-600 mb-1' onClick={handleShare}>Share</Button>
+      </div>
+      <Card className="mb-6 min-w-[750px] bg-gray-800 border-purple-500 border-2 shadow-lg shadow-purple-500/50">
           <CardHeader>
             <CardTitle className="text-xl font-bold text-purple-300">Submit a YouTube Link</CardTitle>
           </CardHeader>
@@ -210,8 +212,7 @@ export default function StreamView({
             </form>
           </CardContent>
         </Card>
-
-        <Card className="bg-gray-800 border-purple-500 border-2 shadow-lg shadow-purple-500/50">
+        <Card className="min-w-[750px] min-h-[400px] bg-gray-800 border-purple-500 border-2 shadow-lg shadow-purple-500/50">
           <CardHeader>
             <CardTitle className="text-xl font-bold text-purple-300">Upcoming Songs</CardTitle>
             
@@ -244,7 +245,7 @@ export default function StreamView({
                         variant="outline"
                         onClick={() => handleVote(song.id, true)}
                         aria-label={`Upvote ${song.title}`}
-                        className="border-purple-500 text-purple-300 hover:bg-purple-700 hover:text-purple-100"
+                        className="border-purple-500 text-purple-600 hover:bg-purple-700 hover:text-purple-100"
                       >
                         <ChevronUp className="h-4 w-4" />
                       </Button>
@@ -253,7 +254,7 @@ export default function StreamView({
                         variant="outline"
                         onClick={() => handleVote(song.id, false)}
                         aria-label={`Downvote ${song.title}`}
-                        className="border-purple-500 text-purple-300 hover:bg-purple-700 hover:text-purple-100"
+                        className="border-purple-500 text-purple-600 hover:bg-purple-700 hover:text-purple-100"
                       >
                         <ChevronDown className="h-4 w-4" />
                       </Button>
@@ -263,7 +264,7 @@ export default function StreamView({
                       variant="outline"
                       onClick={() => handlePlayNext(song.id)}
                       aria-label={`Play ${song.title} next`}
-                      className="border-purple-500 text-purple-300 hover:bg-purple-700 hover:text-purple-100"
+                      className="border-purple-500 text-purple-600 hover:bg-purple-700 hover:text-purple-100"
                     >
                       <PlayCircle className="h-4 w-4" />
                     </Button>
@@ -273,6 +274,11 @@ export default function StreamView({
             </div>
           </CardContent>
         </Card>
+      </div>
+        
+        
+
+        
         <ToastContainer
           position="top-right"
           autoClose={5000}
