@@ -9,11 +9,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChevronUp, ChevronDown, PlayCircle } from "lucide-react"
 import LiteYouTubeEmbed from 'react-lite-youtube-embed';
 import 'react-lite-youtube-embed/dist/LiteYouTubeEmbed.css'
+import { Bounce, toast, ToastContainer } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
 import Image from "next/image"
 import axios from 'axios'
 
 
 const REFRESH_INTERVAL_MS = 10 * 1000;
+const creatorId = "b3af1ac0-53ce-45d1-bbbf-0f2b4cd1f580";
 interface Song {
     id:  string;
     userId: string;
@@ -34,8 +37,10 @@ export default function Component() {
   const [newSongLink, setNewSongLink] = useState('')
   const [songs, setSongs] = useState<Song[]>([])
   const [currentSong, setCurrentSong] = useState<Song | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
   
   async function refreshStream(){
+    setLoading(true)
     const res = await axios.get("/api/streams/my");
     const streams = res.data.streams;
     
@@ -54,6 +59,7 @@ export default function Component() {
 
     }))
     setSongs(formatedSongs)
+    setLoading(false)
 
     if(!currentSong && formatedSongs.length > 0){
         setCurrentSong(formatedSongs[0])
@@ -66,7 +72,9 @@ export default function Component() {
   }
 
   useEffect(() => {
+    
     refreshStream();
+    
     const interval = setInterval(() => {
       refreshStream();  
     }, REFRESH_INTERVAL_MS);
@@ -85,6 +93,7 @@ export default function Component() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setLoading(true)
     const videoId = extractVideoId(newSongLink)
     if (videoId) {
       try {
@@ -92,7 +101,7 @@ export default function Component() {
         const res = await fetch("/api/streams", {
           method: "POST",
           body: JSON.stringify({
-            creatorId: "d0858db3-940f-48cc-a6c0-b49c4d3f7c7c",
+            creatorId: creatorId,
             url: newSongLink
           })
         })
@@ -103,11 +112,31 @@ export default function Component() {
       } catch (error) {
         console.error("Error adding song:", error)
         
+      } finally{
+        setLoading(false)
       }
     } else {
       
       console.error("Invalid YouTube URL")
+      setLoading(false)
     }
+  }
+
+  const handleShare = () => {
+    const sharableLink = `${window.location.hostname}/creator/${creatorId}`
+    navigator.clipboard.writeText(sharableLink).then(() => {
+      toast("link copied to clipboard", {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: false,
+        draggable: true,
+        progress: undefined,
+        theme: "dark",
+        transition: Bounce,
+        });
+    })
   }
 
   const handleVote = (id: string, isUpvote:boolean) => {
@@ -136,14 +165,18 @@ export default function Component() {
 
   return (
     <div className="min-h-screen bg-gray-900 text-purple-100 p-4">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto flex flex-col">
+      <div className='flex justify-end mb-1' >
+      <Button className='border-2 border-gray-600 mb-1' onClick={handleShare}>Share</Button>
+      </div>
         <Card className="mb-6 bg-gray-800 border-purple-500 border-2 shadow-lg shadow-purple-500/50">
           <CardHeader>
             <CardTitle className="text-2xl font-bold text-center text-purple-300">Stream Song Voting</CardTitle>
+            
           </CardHeader>
           <CardContent>
             <div className="aspect-video mb-4 rounded-lg overflow-hidden">
-            {currentSong?.url ? (
+            {currentSong?.url && !loading ? (
       <LiteYouTubeEmbed 
         id={extractVideoId(currentSong.url) ?? ""} 
         title={currentSong.title ?? "Song"} 
@@ -167,8 +200,8 @@ export default function Component() {
                 onChange={(e) => setNewSongLink(e.target.value)}
                 className="flex-grow bg-gray-700 border-purple-500 text-purple-100 placeholder-purple-300"
               />
-              <Button  type="submit" className="bg-purple-600 hover:bg-purple-700 text-white">
-                Add Song
+              <Button disabled={loading}  type="submit" className="bg-purple-600 hover:bg-purple-700 text-white">
+                {loading? "Loading": "Add song"}
               </Button>
             </form>
           </CardContent>
@@ -177,6 +210,9 @@ export default function Component() {
         <Card className="bg-gray-800 border-purple-500 border-2 shadow-lg shadow-purple-500/50">
           <CardHeader>
             <CardTitle className="text-xl font-bold text-purple-300">Upcoming Songs</CardTitle>
+            
+            
+            
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -233,6 +269,17 @@ export default function Component() {
             </div>
           </CardContent>
         </Card>
+        <ToastContainer
+          position="top-right"
+          autoClose={5000}
+          hideProgressBar={false}
+          closeOnClick
+          pauseOnHover
+          draggable
+          
+          theme="dark"
+          transition={Bounce}
+        />
       </div>
     </div>
   )

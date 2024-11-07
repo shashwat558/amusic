@@ -11,7 +11,7 @@ export function AppBar() {
     const session = useSession();
     return <div>
         
-        <div className="flex justify-around p-3">
+        <div className="flex justify-around p-3 bg-gray-900 text-white pt-4">
         <Link href="/" className="text-2xl font-bold text-purple-400 flex items-center gap-2">
             <Music className="h-8 w-8" />
             <span>AMUZIC</span>
