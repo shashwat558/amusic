@@ -25,5 +25,5 @@ interface Song {
   }
 
 export default function Component() {
-  return <StreamView creatorId={creatorId}/>
+  return <StreamView creatorId={creatorId} playVideo={true}/>
 }

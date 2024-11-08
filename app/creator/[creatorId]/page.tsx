@@ -7,5 +7,5 @@ export default function create(
         creatorId: string
     }}
 ){
-    return <StreamView creatorId={creatorId}/>
+    return <StreamView creatorId={creatorId} playVideo={false}/>
 }

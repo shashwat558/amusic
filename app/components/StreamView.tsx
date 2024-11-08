@@ -34,9 +34,11 @@ interface Song {
   }
 
 export default function StreamView({
-    creatorId
+    creatorId,
+    playVideo
 }:{
-    creatorId: string
+    creatorId: string;
+    playVideo: boolean
 }) {
   const [newSongLink, setNewSongLink] = useState('')
   const [songs, setSongs] = useState<Song[]>([])
@@ -44,7 +46,7 @@ export default function StreamView({
   const [loading, setLoading] = useState<boolean>(false);
   
   async function refreshStream(){
-    setLoading(true)
+    
     const res = await axios.get(`/api/streams/?creatorId=${creatorId}`);
     const streams = res.data.streams;
     
@@ -63,7 +65,8 @@ export default function StreamView({
 
     }))
     setSongs(formatedSongs)
-    setLoading(false)
+    setCurrentSong(streams.activeStream)
+    
 
     if(!currentSong && formatedSongs.length > 0){
         setCurrentSong(formatedSongs[0])
@@ -77,11 +80,14 @@ export default function StreamView({
 
   useEffect(() => {
     
-    refreshStream();
     
+    
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const interval = setInterval(() => {
         refreshStream()
     }, REFRESH_INTERVAL_MS);
+
+    
   
     
   }, [])
@@ -176,14 +182,24 @@ export default function StreamView({
             
           </CardHeader>
           <CardContent>
-            <div className="aspect-video mb-4 rounded-lg overflow-hidden" style={{ width: '100%', height: '360px' }}>
+           {playVideo ? <div className="aspect-video mb-4 rounded-lg overflow-hidden" style={{ width: '100%', height: '390px' }}>
             {currentSong?.url && !loading ? (
       <LiteYouTubeEmbed 
         id={extractVideoId(currentSong.url) ?? ""} 
         title={currentSong.title ?? "Song"} 
       />
     ) : null}
-            </div>
+            </div>:  <div className="aspect-video mb-4 rounded-lg overflow-hidden">
+                  <iframe
+                    
+                    src={currentSong?.bigImage}
+                    title="YouTube video player"
+                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  ></iframe>
+                </div>}
             <p className="text-center text-lg font-semibold mb-4 text-purple-300">Now Playing: {currentSong?.title} - {currentSong?.artist}</p>
           </CardContent>
         </Card>
@@ -212,7 +228,7 @@ export default function StreamView({
             </form>
           </CardContent>
         </Card>
-        <Card className="min-w-[750px] min-h-[400px] bg-gray-800 border-purple-500 border-2 shadow-lg shadow-purple-500/50">
+        <Card className="max-w-[800px] min-h-[400px] bg-gray-800 border-purple-500 border-2 shadow-lg shadow-purple-500/50">
           <CardHeader>
             <CardTitle className="text-xl font-bold text-purple-300">Upcoming Songs</CardTitle>
             
@@ -259,7 +275,7 @@ export default function StreamView({
                         <ChevronDown className="h-4 w-4" />
                       </Button>
                     </div>
-                    <Button
+                    {playVideo ? <Button
                       size="sm"
                       variant="outline"
                       onClick={() => handlePlayNext(song.id)}
@@ -267,7 +283,7 @@ export default function StreamView({
                       className="border-purple-500 text-purple-600 hover:bg-purple-700 hover:text-purple-100"
                     >
                       <PlayCircle className="h-4 w-4" />
-                    </Button>
+                    </Button>: null}
                   </div>
                 </div>
               ))}
