@@ -19,18 +19,25 @@ export async function GET(){
             status: 403
         })
     }
-
-    const mostUpvotedStream = await prismaClient.stream.findFirst({
-        where: {
-            userId: user.id
-        },
-        orderBy: {
-            upvotes: {
-                _count: 'desc'
-            }
-        }
-    })
-
+    console.log(user)
+    
+    console.log("djflsdjfsdlf")
+    try {
+        const mostUpvotedStream = await prismaClient.stream.findFirst({
+            where: {
+                userId: user.id
+            },
+            orderBy: {
+                upvotes: {
+                    _count: "desc"
+                }
+            },
+            take: 1
+        })
+        
+    
+    
+     console.log(mostUpvotedStream)
     await Promise.all([prismaClient.currentStream.upsert({
         where: {
             userId: user?.id
@@ -55,4 +62,14 @@ export async function GET(){
 return NextResponse.json({
     stream: mostUpvotedStream
 })
+} catch (error) {
+    console.log(error )
+    return NextResponse.json({
+        message: "Oh shit",
+        error
+    },{
+        status: 411
+    })
+    
+}
 }

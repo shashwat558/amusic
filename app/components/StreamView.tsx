@@ -49,6 +49,8 @@ export default function StreamView({
     
     const res = await axios.get(`/api/streams/?creatorId=${creatorId}`);
     const streams = res.data.streams;
+    const activeStream = res.data.activeStream;
+    
     
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -65,9 +67,11 @@ export default function StreamView({
 
     }))
     setSongs(formatedSongs)
-    setCurrentSong(streams.activeStream.stream)
     
-
+    
+    if(activeStream && activeStream.stream){
+      setCurrentSong(activeStream.stream)
+    }
     if(!currentSong && formatedSongs.length > 0){
         setCurrentSong(formatedSongs[0])
     }
@@ -90,7 +94,7 @@ export default function StreamView({
     
   
     
-  }, [])
+  }, [creatorId])
 
   
 
@@ -173,7 +177,7 @@ export default function StreamView({
         method: "GET",
       })
       const json = await data.json();
-      setCurrentSong(json.stream)
+      setCurrentSong(json.activeStream.stream)
       
       setSongs(prevSongs => prevSongs.filter(song => song.id !== id))
     }
@@ -191,7 +195,7 @@ export default function StreamView({
            {playVideo ? <div className="aspect-video mb-4 rounded-lg overflow-hidden" style={{ width: '100%', height: '390px' }}>
             {currentSong?.url && !loading ? (
      <iframe
-  width="670"
+  width="100%"
   height="380"
   src={`https://www.youtube.com/embed/${currentSong.videoId}?autoplay=1`}
   
@@ -203,7 +207,6 @@ export default function StreamView({
     ) : null}
             </div>:  <div className="aspect-video mb-4 rounded-lg overflow-hidden">
                   <iframe
-                  className='object-contain'
                     
                     src={currentSong?.bigImage}
                     title="YouTube video player"
@@ -255,7 +258,7 @@ export default function StreamView({
                   <div className="flex items-center space-x-3">
                     <div className="relative w-16 h-16 rounded-md overflow-hidden">
                       <Image
-                        src={""}
+                        src={song.smallImage}
                         alt={`${song.title} thumbnail`}
                         layout="fill"
                         objectFit="cover"
