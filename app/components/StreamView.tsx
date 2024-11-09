@@ -65,13 +65,13 @@ export default function StreamView({
 
     }))
     setSongs(formatedSongs)
-    setCurrentSong(streams.activeStream)
+    setCurrentSong(streams.activeStream.stream)
     
 
     if(!currentSong && formatedSongs.length > 0){
         setCurrentSong(formatedSongs[0])
     }
-    console.log(formatedSongs)
+    
     
     
 
@@ -100,6 +100,7 @@ export default function StreamView({
     const match = url.match(regExp)
     return (match && match[2].length === 11) ? match[2] : null
   }
+  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -165,10 +166,15 @@ export default function StreamView({
     ).sort((a, b) => b.upvotes - a.upvotes))
   }
     
-  const handlePlayNext = (id: string) => {
+  const  handlePlayNext = async (id: string) => {
     const songToPlay = songs.find(song => song.id === id)
     if (songToPlay) {
-      setCurrentSong(songToPlay)
+      const data = await fetch('/api/streams/next', {
+        method: "GET",
+      })
+      const json = await data.json();
+      setCurrentSong(json.stream)
+      
       setSongs(prevSongs => prevSongs.filter(song => song.id !== id))
     }
   }
@@ -184,13 +190,20 @@ export default function StreamView({
           <CardContent>
            {playVideo ? <div className="aspect-video mb-4 rounded-lg overflow-hidden" style={{ width: '100%', height: '390px' }}>
             {currentSong?.url && !loading ? (
-      <LiteYouTubeEmbed 
-        id={extractVideoId(currentSong.url) ?? ""} 
-        title={currentSong.title ?? "Song"} 
-      />
+     <iframe
+  width="670"
+  height="380"
+  src={`https://www.youtube.com/embed/${currentSong.videoId}?autoplay=1`}
+  
+  allow="autoplay; fullscreen"
+  allowFullScreen
+></iframe>
+
+
     ) : null}
             </div>:  <div className="aspect-video mb-4 rounded-lg overflow-hidden">
                   <iframe
+                  className='object-contain'
                     
                     src={currentSong?.bigImage}
                     title="YouTube video player"
@@ -275,9 +288,10 @@ export default function StreamView({
                         <ChevronDown className="h-4 w-4" />
                       </Button>
                     </div>
-                    {playVideo ? <Button
+                    {playVideo ?<Button
                       size="sm"
                       variant="outline"
+                      disabled={!playVideo}
                       onClick={() => handlePlayNext(song.id)}
                       aria-label={`Play ${song.title} next`}
                       className="border-purple-500 text-purple-600 hover:bg-purple-700 hover:text-purple-100"
