@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ChevronUp, ChevronDown, PlayCircle } from "lucide-react"
+import { ChevronUp, ChevronDown, PlayCircle} from "lucide-react"
 
 //@ts-expect-error
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -19,7 +19,7 @@ import Image from "next/image"
 import axios from 'axios'
 
 
-const REFRESH_INTERVAL_MS = 10 * 1000;
+const refreshStreamTime = 10 * 1000;
 
 interface Song {
     id:  string;
@@ -103,43 +103,37 @@ export default function StreamView({
   }
 
   useEffect(() => {
-    
-    
-    
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const interval = setInterval(() => {
-        refreshStream()
-    }, REFRESH_INTERVAL_MS);
+    refreshStream();
+    setInterval(() => {
+      
 
+    },refreshStreamTime)
     
-  
-    
-  }, [])
+  }, []);
 
   useEffect(() => {
-        if(!videoPlayerRef.current){
-          return;
+    if (!videoPlayerRef.current || !currentSong) {
+      return;
+    }
+    const player = YouTubePlayer(videoPlayerRef.current);
 
-        }
+    // 'loadVideoById' is queued until the player is ready to receive API calls.
+    player.loadVideoById(currentSong.videoId);
 
-        const player = YouTubePlayer(videoPlayerRef.current);
-
-        // 'loadVideoById' is queued until the player is ready to receive API calls.
-        player.loadVideoById(currentSong?.videoId);
-
-        // 'playVideo' is queue until the player is ready to received API calls and after 'loadVideoById' has been called.
-        player.playVideo();
-
-        player.on('stateChange', (event) => {
-          console.log(event.data)
-        })
-        return () => {
-          player.destroy();
-        }
-
-        // 'stopVideo' is queued after 'playVideo'.
-        
-  },[ videoPlayerRef])
+    // 'playVideo' is queue until the player is ready to received API calls and after 'loadVideoById' has been called.
+    player.playVideo();
+    function eventHandler(event: { data: number }) {
+      console.log(event);
+      console.log(event.data);
+      if (event.data === 0) {
+        handlePlayNext();
+      }
+    }
+    player.on("stateChange", eventHandler);
+    return () => {
+      player.destroy();
+    };
+  }, [currentSong, videoPlayerRef]);
 
   
 
@@ -215,9 +209,9 @@ export default function StreamView({
     ).sort((a, b) => b.upvotes - a.upvotes))
   }
     
-  const  handlePlayNext = async (id: string) => {
-    const songToPlay = songs.find(song => song.id === id)
-    if (songToPlay) {
+  const  handlePlayNext = async () => {
+    
+    if (songs.length > 0) {
       const data = await fetch('/api/streams/next', {
         method: "GET",
       })
@@ -228,10 +222,13 @@ export default function StreamView({
       }
       
     
-        setCurrentSong(songToPlay)
+        setCurrentSong(songs[0])
+        setSongs(songs.slice(1))
       
+        
+
       
-      setSongs(prevSongs => prevSongs.filter(song => song.id !== id))
+    
     }
   }
 
@@ -246,7 +243,8 @@ export default function StreamView({
           {songs.length === 0 && <p className='text-xl text-center text-purple-400'>NO video in queue</p>}
           <CardContent>
            {playVideo ? <div className="aspect-video mb-4 rounded-lg overflow-hidden" style={{ width: '100%', height: '390px' }}>
-            {currentSong?.url && !loading ? (
+            {currentSong?.url ? (
+              //@ts-ignore
               <div className='w-full' ref={videoPlayerRef}/>
 //      <iframe
 //   width="100%"
@@ -349,7 +347,7 @@ export default function StreamView({
                       size="sm"
                       variant="outline"
                       disabled={!playVideo}
-                      onClick={() => handlePlayNext(song.id)}
+                      onClick={() => handlePlayNext()}
                       aria-label={`Play ${song.title} next`}
                       className="border-purple-500 text-purple-600 hover:bg-purple-700 hover:text-purple-100"
                     >
