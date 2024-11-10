@@ -3,7 +3,7 @@
 
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -29,7 +29,7 @@ interface Song {
     bigImage: string;
     smallImage: string;
     haveUpvoted: boolean;
-    
+    played:boolean;
     artist?: string;
     upvotes: number;
     url: string ;
@@ -48,6 +48,7 @@ export default function StreamView({
   const [songs, setSongs] = useState<Song[]>([])
   const [currentSong, setCurrentSong] = useState<Song | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
+  const videoPlayerRef = useRef();
   
   async function refreshStream(){
     
@@ -58,18 +59,18 @@ export default function StreamView({
     
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const formatedSongs = streams.map((stream: any) => ({
-        id: stream.id,
-        userId: stream.userId,
-        url: stream.url,
-        title: stream.title,
-        videoId: stream.extractedId,
-        smallImage: stream.smallImage,
-        bigImage: stream.bigImage,
-        upvotes: stream.upvoteCount ?? 0,
-        haveUpvoted: stream.haveUpvoted ?? false,
+    const formatedSongs: Song[] = streams.filter((stream:Song)=> !stream.played).map((stream: any) => ({
+      id: stream.id,
+      userId: stream.userId,
+      url: stream.url,
+      title: stream.title,
+      videoId: stream.extractedId,
+      smallImage: stream.smallImage,
+      bigImage: stream.bigImage,
+      upvotes: stream.upvoteCount ?? 0,
+      haveUpvoted: stream.haveUpvoted ?? false,
 
-    }))
+  }))
     
 
 
@@ -84,6 +85,7 @@ export default function StreamView({
         smallImage: activeStream.stream.smallImage,
         bigImage: activeStream.stream.bigImage,
         upvotes: activeStream.stream.upvoteCount ?? 0,
+        played: activeStream.stream.played ?? true,
         haveUpvoted: activeStream.stream.haveUpvoted ?? false,
         type: activeStream.stream.type ?? "default",
       };
@@ -113,6 +115,31 @@ export default function StreamView({
   
     
   }, [])
+
+  useEffect(() => {
+        if(!videoPlayerRef.current){
+          return;
+
+        }
+
+        const player = YouTubePlayer(videoPlayerRef.current);
+
+        // 'loadVideoById' is queued until the player is ready to receive API calls.
+        player.loadVideoById(currentSong?.videoId);
+
+        // 'playVideo' is queue until the player is ready to received API calls and after 'loadVideoById' has been called.
+        player.playVideo();
+
+        player.on('stateChange', (event) => {
+          console.log(event.data)
+        })
+        return () => {
+          player.destroy();
+        }
+
+        // 'stopVideo' is queued after 'playVideo'.
+        
+  },[ videoPlayerRef])
 
   
 
@@ -220,14 +247,15 @@ export default function StreamView({
           <CardContent>
            {playVideo ? <div className="aspect-video mb-4 rounded-lg overflow-hidden" style={{ width: '100%', height: '390px' }}>
             {currentSong?.url && !loading ? (
-     <iframe
-  width="100%"
-  height="380"
-  src={`https://www.youtube.com/embed/${currentSong.videoId}?autoplay=1`}
+              <div className='w-full' ref={videoPlayerRef}/>
+//      <iframe
+//   width="100%"
+//   height="380"
+//   src={`https://www.youtube.com/embed/${currentSong.videoId}?autoplay=1`}
   
-  allow="autoplay; fullscreen"
-  allowFullScreen
-></iframe>
+//   allow="autoplay; fullscreen"
+//   allowFullScreen
+// ></iframe>
 
 
     ) : null}
