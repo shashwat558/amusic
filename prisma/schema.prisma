@@ -18,8 +18,9 @@ model User {
   email         String   @unique
   provider      Provider
   role          Role
-  streams       Stream[]
+  streams       Stream[]  @relation("user")
   upvotes       Upvote[]
+  added         Stream[] @relation("addedBy")
 }
 
 model Stream {
@@ -35,8 +36,10 @@ model Stream {
   createdAt       DateTime   @default(now())
   active          Boolean    @default(true)
   upvotes         Upvote[]
+  addedById       String
   userId          String
-  user            User      @relation(fields: [userId], references: [id])
+  user            User      @relation(fields: [userId], references: [id], name: "user")
+  addedBy         User      @relation(fields: [addedById], references: [id], name: "addedBy")
   currentStream   CurrentStream?
 
 }

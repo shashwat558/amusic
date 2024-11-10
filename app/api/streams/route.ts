@@ -2,19 +2,22 @@
 import { prismaClient } from "@/app/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 
-import { z } from 'zod';
+
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 //@ts-ignore
 import youtubesearchapi from "youtube-search-api"
 import { getServerSession } from "next-auth";
+import { z } from "zod";
 
-const YT_REGEX = /^(?:(?:https?:)?\/\/)?(?:www\.)?(?:m\.)?(?:youtu(?:be)?\.com\/(?:v\/|embed\/|watch(?:\/|\?v=))|youtu\.be\/)((?:\w|-){11})(?:\S+)?$/
-
-export const CreateStreamSchema = z.object({
+const CreateStreamSchema = z.object({
     creatorId: z.string(),
     //TODO: Find a way to validat youtube and spotify url
     url: z.string().url() 
 })
+
+const YT_REGEX = /^(?:(?:https?:)?\/\/)?(?:www\.)?(?:m\.)?(?:youtu(?:be)?\.com\/(?:v\/|embed\/|watch(?:\/|\?v=))|youtu\.be\/)((?:\w|-){11})(?:\S+)?$/
+
+
 
 export async function POST(req: NextRequest){
     
@@ -37,6 +40,37 @@ export async function POST(req: NextRequest){
         const thumbnails = res.thumbnail.thumbnails;
         thumbnails.sort((a: {width: number}, b: {width: number}) => a.width < b.width ? -1: 1);
 
+        const session = await getServerSession();
+
+        const user = await prismaClient.user.findFirst({
+            where:{
+                email: session?.user?.email ?? ""
+            }
+        });
+    
+        if(!user) {
+            return NextResponse.json({
+                message: "Unauthorized"
+            }, {
+                status: 403
+            })
+        }
+
+        const existingActiveStream = await prismaClient.stream.count({
+
+            where:{
+                userId: data.creatorId
+            }
+        })
+
+        if(existingActiveStream > 20){
+            return NextResponse.json({
+                message: "Already at limit"
+            },{
+                status: 411
+            })
+        }
+
         const stream = await prismaClient.stream.create({
            data:{
             userId: data.creatorId,
@@ -45,7 +79,9 @@ export async function POST(req: NextRequest){
             type: 'Youtube',
             title: res.title ?? "can't find title",
             bigImage: thumbnails[thumbnails.length - 1].url ?? "",
-            smallImage: (thumbnails.length > 1 ? thumbnails[thumbnails.length -2].url: thumbnails[thumbnails.length - 1].url) ?? ""
+            smallImage: (thumbnails.length > 1 ? thumbnails[thumbnails.length -2].url: thumbnails[thumbnails.length - 1].url) ?? "",
+            addedById: user.id
+        
 
            }
 

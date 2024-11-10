@@ -14,6 +14,6 @@ export function Redirect(){
         } else {
             router.push("/")
         }
-    }, [session])
+    }, [router, session])
     return null;
 }

@@ -48,7 +48,7 @@ export default function StreamView({
   const [songs, setSongs] = useState<Song[]>([])
   const [currentSong, setCurrentSong] = useState<Song | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
-  const videoPlayerRef = useRef();
+  const videoPlayerRef = useRef<HTMLDivElement>();
   
   async function refreshStream(){
     
