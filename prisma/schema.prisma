@@ -30,6 +30,9 @@ model Stream {
   bigImage        String    @default("")
   smallImage      String    @default("")
   extractedId     String
+  played          Boolean    @default(false)
+  playedTs       DateTime?
+  createdAt       DateTime   @default(now())
   active          Boolean    @default(true)
   upvotes         Upvote[]
   userId          String
@@ -37,6 +40,7 @@ model Stream {
   currentStream   CurrentStream?
 
 }
+
 
 model CurrentStream {
   userId        String   @id

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 
 
 'use client'
@@ -7,7 +8,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChevronUp, ChevronDown, PlayCircle } from "lucide-react"
-import LiteYouTubeEmbed from 'react-lite-youtube-embed';
+
+//@ts-expect-error
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import YouTubePlayer from 'youtube-player';
 import 'react-lite-youtube-embed/dist/LiteYouTubeEmbed.css'
 import { Bounce, toast, ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
@@ -66,15 +70,29 @@ export default function StreamView({
         haveUpvoted: stream.haveUpvoted ?? false,
 
     }))
-    setSongs(formatedSongs)
     
-    
-    if(activeStream && activeStream.stream){
-      setCurrentSong(activeStream.stream)
+
+
+    let formattedActiveStream = null;
+    if (activeStream && activeStream.stream) {
+      formattedActiveStream = {
+        id: activeStream.stream.id,
+        userId: activeStream.stream.userId,
+        url: activeStream.stream.url,
+        title: activeStream.stream.title,
+        videoId: activeStream.stream.extractedId,
+        smallImage: activeStream.stream.smallImage,
+        bigImage: activeStream.stream.bigImage,
+        upvotes: activeStream.stream.upvoteCount ?? 0,
+        haveUpvoted: activeStream.stream.haveUpvoted ?? false,
+        type: activeStream.stream.type ?? "default",
+      };
     }
-    if(!currentSong && formatedSongs.length > 0){
-        setCurrentSong(formatedSongs[0])
-    }
+
+  // Set the states
+      setSongs(formatedSongs);
+      setCurrentSong(formattedActiveStream);
+
     
     
     
@@ -94,7 +112,7 @@ export default function StreamView({
     
   
     
-  }, [creatorId])
+  }, [])
 
   
 
@@ -177,7 +195,14 @@ export default function StreamView({
         method: "GET",
       })
       const json = await data.json();
-      setCurrentSong(json.activeStream.stream)
+      const nextStream = json.stream;
+      if(nextStream){
+        setCurrentSong(nextStream)
+      }
+      
+    
+        setCurrentSong(songToPlay)
+      
       
       setSongs(prevSongs => prevSongs.filter(song => song.id !== id))
     }
@@ -191,6 +216,7 @@ export default function StreamView({
             <CardTitle className="text-2xl font-bold text-center text-purple-300">Stream Song Voting</CardTitle>
             
           </CardHeader>
+          {songs.length === 0 && <p className='text-xl text-center text-purple-400'>NO video in queue</p>}
           <CardContent>
            {playVideo ? <div className="aspect-video mb-4 rounded-lg overflow-hidden" style={{ width: '100%', height: '390px' }}>
             {currentSong?.url && !loading ? (

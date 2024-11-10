@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Stream" ALTER COLUMN "playedTs" DROP NOT NULL,
+ALTER COLUMN "playedTs" DROP DEFAULT;
