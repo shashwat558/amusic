@@ -19,6 +19,7 @@ model User {
   provider      Provider
   role          Role
   streams       Stream[]  @relation("user")
+  password      String?
   upvotes       Upvote[]
   added         Stream[] @relation("addedBy")
 }
@@ -76,4 +77,5 @@ enum Role {
 
 enum Provider {
   Google
+  Credentails
 }
